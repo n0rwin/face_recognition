@@ -13,7 +13,7 @@ namespace FaceIdentification
     public class FaceService
     {
         const string personGroupId = "df_employees";
-        const string faceApiKey = "f44c08e915b849b09ca844768a71c372";
+        const string faceApiKey = "your key";
         private static FaceServiceClient faceServiceClient = new FaceServiceClient(faceApiKey, "https://westeurope.api.cognitive.microsoft.com/face/v1.0");
 
         public async static void CreatePersonGroup()
