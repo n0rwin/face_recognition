@@ -23,6 +23,8 @@ namespace FaceIdentification
         public MainWindow()
         {
             InitializeComponent();
+
+            FaceService.Recognize();
         }
     }
 }
