@@ -74,35 +74,7 @@ namespace LiveCameraSample
             return outputBitmap;
         }
 
-        public static BitmapSource DrawTags(BitmapSource baseImage, Tag[] tags)
-        {
-            if (tags == null)
-            {
-                return baseImage;
-            }
-
-            Action<DrawingContext, double> drawAction = (drawingContext, annotationScale) =>
-            {
-                double y = 0;
-                foreach (var tag in tags)
-                {
-                    // Create formatted text--in a particular font at a particular size
-                    FormattedText ft = new FormattedText(tag.Name,
-                        CultureInfo.CurrentCulture, FlowDirection.LeftToRight, s_typeface,
-                        42 * annotationScale, Brushes.Black);
-                    // Instead of calling DrawText (which can only draw the text in a solid colour), we
-                    // convert to geometry and use DrawGeometry, which allows us to add an outline. 
-                    var geom = ft.BuildGeometry(new System.Windows.Point(10 * annotationScale, y));
-                    drawingContext.DrawGeometry(s_lineBrush, new Pen(Brushes.Black, 2 * annotationScale), geom);
-                    // Move line down
-                    y += 42 * annotationScale;
-                }
-            };
-
-            return DrawOverlay(baseImage, drawAction);
-        }
-
-        public static BitmapSource DrawFaces(BitmapSource baseImage, Microsoft.ProjectOxford.Face.Contract.Face[] faces, EmotionScores[] emotionScores, string[] celebName)
+        public static BitmapSource DrawFaces(BitmapSource baseImage, Microsoft.ProjectOxford.Face.Contract.Face[] faces, Microsoft.ProjectOxford.Face.Contract.Person person)
         {
             if (faces == null)
             {
@@ -121,19 +93,9 @@ namespace LiveCameraSample
                         face.FaceRectangle.Width, face.FaceRectangle.Height);
                     string text = "";
 
-                    if (face.FaceAttributes != null)
+                    if (person != null)
                     {
-                        text += Aggregation.SummarizeFaceAttributes(face.FaceAttributes);
-                    }
-
-                    if (emotionScores?[i] != null)
-                    {
-                        text += Aggregation.SummarizeEmotion(emotionScores[i]);
-                    }
-
-                    if (celebName?[i] != null)
-                    {
-                        text += celebName[i];
+                        text += person.Name;
                     }
 
                     faceRect.Inflate(6 * annotationScale, 6 * annotationScale);

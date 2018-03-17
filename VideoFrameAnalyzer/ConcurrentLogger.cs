@@ -31,39 +31,40 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // 
 
-using Microsoft.ProjectOxford.Emotion.Contract;
-using System.Linq;
-using Microsoft.ProjectOxford.Face.Contract;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace LiveCameraSample
+namespace VideoFrameAnalyzer
 {
-    internal class Aggregation
+    public static class ConcurrentLogger
     {
-        public static Tuple<string, float> GetDominantEmotion(Microsoft.ProjectOxford.Common.Contract.EmotionScores scores)
-        {
-            return scores.ToRankedList().Select(kv => new Tuple<string, float>(kv.Key, kv.Value)).First();
-        }
+        private readonly static SemaphoreSlim s_printMutex = new SemaphoreSlim(1);
+        private readonly static BlockingCollection<string> s_messageQueue = new BlockingCollection<string>();
 
-        public static string SummarizeEmotion(Microsoft.ProjectOxford.Common.Contract.EmotionScores scores)
+        public static void WriteLine(string message)
         {
-            var bestEmotion = Aggregation.GetDominantEmotion(scores);
-            return string.Format("{0}: {1:N1}", bestEmotion.Item1, bestEmotion.Item2);
-        }
-
-        public static string SummarizeFaceAttributes(FaceAttributes attr)
-        {
-            List<string> attrs = new List<string>();
-            if (attr.Gender != null) attrs.Add(attr.Gender);
-            if (attr.Age > 0) attrs.Add(attr.Age.ToString());
-            if (attr.HeadPose != null)
+            var timestamp = DateTime.Now;
+            // Push the message on the queue
+            s_messageQueue.Add(timestamp.ToString("o") + ": " + message);
+            // Start a new task that will dequeue one message and print it. The tasks will not
+            // necessarily run in order, but since each task just takes the oldest message and
+            // prints it, the messages will print in order. 
+            Task.Run(async () =>
             {
-                // Simple rule to estimate whether person is facing camera. 
-                bool facing = Math.Abs(attr.HeadPose.Yaw) < 25;
-                attrs.Add(facing ? "facing camera" : "not facing camera");
-            }
-            return string.Join(", ", attrs);
+                // Wait to get access to the queue. 
+                await s_printMutex.WaitAsync();
+                try
+                {
+                    string msg = s_messageQueue.Take();
+                    Console.WriteLine(msg);
+                }
+                finally
+                {
+                    s_printMutex.Release();
+                }
+            });
         }
     }
 }
